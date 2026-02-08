@@ -3,7 +3,7 @@ import time
 # create socket outside because we can always reuse, also set timeout.
 
 receiverip = "127.0.0.1"
-receiverport = "5001"
+receiverport = 5001
 packet_sz = 1024 # we read 1024 bytes
 sequence_id_size = 4
 tp = []
@@ -13,15 +13,15 @@ def send():
     starttp = time.time()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(1)
-    with open('docker\file.mp3', 'read') as f:
+    with open('docker\file.mp3', 'rb') as f:
         # we always start from packet 0
         seqnum = 0
         while True:
-            chunk = f.read(packet_sz) 
+            chunk = f.read(packet_sz-sequence_id_size) 
             if not chunk:
                 break
             # as of right noe we have the individual chunks of the data in 1024 bytes, now we can send
-            packet = sequence_id_size.to_bytes(sequence_id_size, 'big') + chunk
+            packet = seqnum.to_bytes(sequence_id_size, 'big') + chunk
             ackget =  False
             startppd = time.time()
             while not ackget:
@@ -34,6 +34,7 @@ def send():
                     #if correct, u just add smth more if not then just do nothing because the while will just retransmit
                     if acknum == (seqnum + len(chunk)):
                         ackget = True
+                        # we don't add it by a full 1028 because there may be a chance that it reaches an end and does not read a full 1024 byte and then it causes issues
                         seqnum += len(chunk)
                         endppd = time.time()
                         ppd.append(endppd-startppd)
@@ -48,6 +49,6 @@ def main():
         send()
     avgtp = sum(tp)/len(tp)
     avgppd = sum(ppd)/len(ppd)
-    print(avgtp)
-    print(avgppd)
-    print(0.3*avgtp/1000 + 0.7/avgppd)
+    print(f"{avgtp:.7f}")
+    print(f"{avgppd:.7f}")
+    print(f"{0.3*avgtp/1000 + 0.7/avgppd:.7f}")
