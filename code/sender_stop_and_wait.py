@@ -48,7 +48,7 @@ def send():
     tp.append(endtp-starttp)
 def main():
     for _ in range(10):
-        send
+        send()
     avgtp = sum(tp)/len(tp)
     avgppd = sum(ppd)/len(ppd)
     print(avgtp)
