@@ -3,8 +3,10 @@ import time
 
 PACKET_SIZE = 1024
 SEQ_ID_SIZE = 4
+EXTRA_BUFFER_SPACE = 5
 MESSAGE_SIZE = PACKET_SIZE - SEQ_ID_SIZE
 WINDOW_SIZE = 100 * MESSAGE_SIZE
+RECEIVER_IP_ADDRESS = '127.0.0.1'
 RECEIVER_PORT = 5001 
 SENDER_PORT = 6700
 
@@ -14,7 +16,7 @@ class UDPSender:
         self.Socket.bind(("0.0.0.0",SENDER_PORT))
         self.DictOfPackets = {}
         self.SlidingWindow = []
-        self.DictOfAcks = []
+        self.ListOfAcks = []
     
     def send(self, file_to_send, receiver_ip_str, receiver_port):
         #set timeout and address tuple
@@ -33,7 +35,7 @@ class UDPSender:
 
         #send first 100 packets thru the network
         i = 0
-        for seq_id in self.DictOfPackets:
+        for seq_id in sorted(self.DictOfPackets):
             if (i == 100):
                 break
             packet = self.DictOfPackets[seq_id]
@@ -45,10 +47,10 @@ class UDPSender:
         expected_ack_id = 0
         while self.DictOfPackets:
             try:
-                received_ack_id_bytes, _ = self.Socket.recvfrom(SEQ_ID_SIZE)
+                received_ack_id_bytes, _ = self.Socket.recvfrom((SEQ_ID_SIZE + EXTRA_BUFFER_SPACE))
                 received_ack_id = int.from_bytes(received_ack_id_bytes,signed=True, byteorder='big')
-                self.DictOfAcks.append(received_ack_id)
-                while(expected_ack_id in self.DictOfAcks):
+                self.ListOfAcks.append(received_ack_id)
+                while(expected_ack_id in self.ListOfAcks):
                     self.DictOfPackets.pop(expected_ack_id)
                     self.SlidingWindow.remove(expected_ack_id)
                     #expected_ack_id = self.SlidingWindow[0]
@@ -56,10 +58,10 @@ class UDPSender:
                     if self.SlidingWindow:
                         end_seq_id = self.SlidingWindow[-1]
                         new_end_seq_id = end_seq_id + MESSAGE_SIZE
-                    if new_end_seq_id in self.DictOfPackets:
-                        packet = self.DictOfPackets[new_end_seq_id]
-                        self.Socket.sendto(packet, address)
-                        self.SlidingWindow.append(new_end_seq_id)
+                        if new_end_seq_id in self.DictOfPackets:
+                            packet = self.DictOfPackets[new_end_seq_id]
+                            self.Socket.sendto(packet, address)
+                            self.SlidingWindow.append(new_end_seq_id)
 
             except socket.timeout:
                 #re-send the packets in the SW:
@@ -80,7 +82,7 @@ class UDPSender:
 
 def main():
     udp_sender = UDPSender()
-    udp_sender.send('docker/file.mp3', '127.0.0.1', RECEIVER_PORT)
+    udp_sender.send('file.mp3', RECEIVER_IP_ADDRESS, RECEIVER_PORT)
 
 if __name__ == "__main__": main()
         
