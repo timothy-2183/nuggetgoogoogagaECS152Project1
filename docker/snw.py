@@ -32,7 +32,6 @@ def send():
                     #wait until u receive something
                     ackpacket, _ = sock.recvfrom(packet_sz)
                     acknum = int.from_bytes(ackpacket[:sequence_id_size], 'big')
-                    print(acknum)
                     #if correct, u just add smth more if not then just do nothing because the while will just retransmit
                     if acknum > seqnum:
                         ackget = True
