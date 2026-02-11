@@ -6,7 +6,7 @@ PACKET_SIZE = 1024
 SEQ_ID_SIZE = 4
 EXTRA_BUFFER_SPACE = 5
 MESSAGE_SIZE = PACKET_SIZE - SEQ_ID_SIZE
-WINDOW_SIZE = 100 * MESSAGE_SIZE
+WINDOW_PACKETS = 100
 RECEIVER_IP_ADDRESS = '127.0.0.1'
 RECEIVER_PORT = 5001 
 SENDER_PORT = 0
@@ -15,82 +15,70 @@ class UDPSender:
     def __init__(self):
         self.Socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.Socket.bind(("0.0.0.0",SENDER_PORT))
-        self.DictOfPackets = {}
-        self.SlidingWindow = []
-        self.send100_done = False
+        self.Socket.settimeout(2)
+        self.packetdict = {}
+        self.packettp = {}
     
     def send(self, file_to_send, receiver_ip_str, receiver_port):
-        #set timeout and address tuple
-        self.address = (receiver_ip_str, receiver_port)
-        self.Socket.settimeout(1) #time out when NO packet is received
+        #and address tuple
+        address = (receiver_ip_str, receiver_port)
         #open file
         with open(file_to_send , 'rb') as f:
             file_data = f.read()
         #break file into packets of 1020 bytes each and store in a dict (add seq_id later to the packet's start)
-        seq_id = 0
+        packets = {}
         for i in range(0, len(file_data), MESSAGE_SIZE):
-            seq_id = i
-            payload = file_data[seq_id:(seq_id + MESSAGE_SIZE)]
-            seq_id_bytes = int.to_bytes(seq_id, SEQ_ID_SIZE, signed=True, byteorder='big')
-            self.DictOfPackets[seq_id] = seq_id_bytes + payload
+            payload = file_data[i:i + MESSAGE_SIZE]
+            seq_id_bytes = i.to_bytes(SEQ_ID_SIZE, signed=True, byteorder='big')
+            packets[i] = seq_id_bytes+payload
 
-        #send first 100 packets thru the network
-        self.send100()
-      
+        base = 0
+        nxt_sq = 0
+        win_sz = WINDOW_PACKETS*MESSAGE_SIZE
+        file_size = len(file_data)
 
-        #manipulating the sliding window
-        expected_ack_id = MESSAGE_SIZE
-        while self.DictOfPackets:
+        #start transmitting the message from here
+        while base < file_size:
+            while nxt_sq < base + win_sz and nxt_sq < file_size:
+                self.packetdict[nxt_sq] = time.time()
+                self.Socket.sendto(packets[nxt_sq],address)
+                nxt_sq+= MESSAGE_SIZE
+
             try:
-                received_ack_packet, _ = self.Socket.recvfrom((SEQ_ID_SIZE + EXTRA_BUFFER_SPACE))
-                received_ack_id = int.from_bytes(received_ack_packet[:SEQ_ID_SIZE],signed=True, byteorder='big')
-                while (received_ack_id >= expected_ack_id):
-                    packet_seq_id = expected_ack_id - MESSAGE_SIZE
-                    if packet_seq_id in self.DictOfPackets:
-                        self.DictOfPackets.pop(packet_seq_id)
-                    if packet_seq_id in self.SlidingWindow:
-                        self.SlidingWindow.remove(packet_seq_id)
-                    expected_ack_id += MESSAGE_SIZE
-                    if self.SlidingWindow:
-                        next_seq_id = self.SlidingWindow[-1] + MESSAGE_SIZE
-                        if next_seq_id in self.DictOfPackets:
-                            packet = self.DictOfPackets[next_seq_id]
-                            self.Socket.sendto(packet, self.address)
-                            self.SlidingWindow.append(next_seq_id)
+                ack_packet, _ = self.Socket.recvfrom(PACKET_SIZE)
+                ack = int.from_bytes(ack_packet[:SEQ_ID_SIZE], byteorder= 'big', signed = True)
+                #this part to measure individual packet throughput
+                seq = base 
+                while seq < ack:
+                    if seq in self.packetdict:
+                        t_send = self.packetdict[seq]
+                        t_ack = time.time()
+                        packettp = MESSAGE_SIZE / (t_ack-t_send)
+                    seq+=MESSAGE_SIZE
+                #move the sliding window
+                if ack> base:                         
+                    base = ack
             except socket.timeout:
-                print("TIMEOUT! RETRANSMITING")
-                for seq_id in self.SlidingWindow:
-                    packet = self.DictOfPackets[seq_id]
-                    self.Socket.sendto(packet, self.address)
-                    print(f"  Retransmitted packet {seq_id}")
-
-        print("ALL PACKETS SENT") #DEBUG
+                resend = base
+                while resend < nxt_sq:
+                    self.Socket.sendto(packets[resend], address)
+                    self.packetdict[resend] = time.time()
+                    resend += MESSAGE_SIZE
 
         #finack
-        seq_id = -1
-        seq_id_bytes = int.to_bytes(seq_id, SEQ_ID_SIZE, signed=True, byteorder='big')
-        fin_message = '==FINACK=='
-        payload = fin_message.encode()
-        packet = seq_id_bytes + payload
-        self.Socket.sendto(packet, self.address)
+        fin_seq = (-1).to_bytes(SEQ_ID_SIZE, byteorder='big', signed=True)
+        self.Socket.sendto(fin_seq + b'==FINACK==', address)
         self.Socket.close()
-    
-    def send100(self):
-        i = 0
-        for seq_id in sorted(self.DictOfPackets):
-            if (i == 100):
-                break
-            packet = self.DictOfPackets[seq_id]
-            self.Socket.sendto(packet, self.address)
-            self.SlidingWindow.append(seq_id)
-            i += 1
-        self.send100_done = True
-        print(f"Initial window: {self.SlidingWindow[:10]}...")  # ← ADD THIS (first 10) DEBUG
-    
     
 
 def main():
     udp_sender = UDPSender()
+    start = time.time()
     udp_sender.send('file.mp3', RECEIVER_IP_ADDRESS, RECEIVER_PORT)
+    end = time.time()
+    print(end-start)
+    avg = sum(udp_sender.packetdict.values())/len(udp_sender.packetdict)
+    print(f"{avg:.7f}")
+    print(f"{0.3*(end-start)/1000 + 0.7/avg:.7f}")
 
 if __name__ == "__main__": main()
