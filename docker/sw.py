@@ -45,21 +45,18 @@ class UDPSender:
                 received_ack_packet, _ = self.Socket.recvfrom((SEQ_ID_SIZE + EXTRA_BUFFER_SPACE))
                 received_ack_id = int.from_bytes(received_ack_packet[:SEQ_ID_SIZE],signed=True, byteorder='big')
                 while (received_ack_id >= expected_ack_id):
-                    #pop self.DictOfPackets
                     packet_seq_id = expected_ack_id - MESSAGE_SIZE
                     if packet_seq_id in self.DictOfPackets:
                         self.DictOfPackets.pop(packet_seq_id)
-                        print("Packet", expected_ack_id, "acknowledged") #DEBUG
-                    # send the next packet right outside sliding window
-                    next_seq_id = self.SlidingWindow[-1] + MESSAGE_SIZE
-                    if next_seq_id in self.DictOfPackets:
-                        packet = self.DictOfPackets[next_seq_id]
-                        self.Socket.sendto(packet, self.address)
-                        # slide the sliding window
+                    if packet_seq_id in self.SlidingWindow:
                         self.SlidingWindow.remove(packet_seq_id)
-                        self.SlidingWindow.append(next_seq_id)
-                        # increment expected_ack_id
-                        expected_ack_id += MESSAGE_SIZE
+                    expected_ack_id += MESSAGE_SIZE
+                    if self.SlidingWindow:
+                        next_seq_id = self.SlidingWindow[-1] + MESSAGE_SIZE
+                        if next_seq_id in self.DictOfPackets:
+                            packet = self.DictOfPackets[next_seq_id]
+                            self.Socket.sendto(packet, self.address)
+                            self.SlidingWindow.append(next_seq_id)
             except socket.timeout:
                 print("TIMEOUT! RETRANSMITING")
                 for seq_id in self.SlidingWindow:
@@ -91,9 +88,6 @@ class UDPSender:
         print(f"Initial window: {self.SlidingWindow[:10]}...")  # ← ADD THIS (first 10) DEBUG
     
     
-
-
-
 
 def main():
     udp_sender = UDPSender()

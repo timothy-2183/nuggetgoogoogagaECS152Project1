@@ -1,10 +1,9 @@
 import socket
 import time
-# create socket outside because we can always reuse, also set timeout.
 
 receiverip = "127.0.0.1"
 receiverport = 5001
-packet_sz = 1024                    
+packet_sz = 1024
 sequence_id_size = 4
 data_sz = packet_sz-sequence_id_size
 tp = []
