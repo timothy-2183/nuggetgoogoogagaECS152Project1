@@ -1,9 +1,10 @@
 import socket
 import time
+# create socket outside because we can always reuse, also set timeout.
 
 receiverip = "127.0.0.1"
 receiverport = 5001
-packet_sz = 1024
+packet_sz = 1024                    
 sequence_id_size = 4
 data_sz = packet_sz-sequence_id_size
 tp = []
@@ -27,22 +28,20 @@ def send():
             while not ackget:
                 #send here regardless of outcome
                 sock.sendto(packet,(receiverip, receiverport))
-                print("packet sent")
                 try:
                     #wait until u receive something
                     ackpacket, _ = sock.recvfrom(packet_sz)
                     acknum = int.from_bytes(ackpacket[:sequence_id_size], 'big')
+                    print(acknum)
                     #if correct, u just add smth more if not then just do nothing because the while will just retransmit
-                    if acknum >= (seqnum + len(chunk)):
+                    if acknum > seqnum:
                         ackget = True
                         # we don't add it by a full 1028 because there may be a chance that it reaches an end and does not read a full 1024 byte and then it causes issues
                         seqnum = acknum
                         endppd = time.time()
                         ppd.append(endppd-startppd)
-                        print("proper ack got")
                     
                 except (socket.timeout,ConnectionResetError):
-                    print("timeout")
                     pass
     eof_packet = seqnum.to_bytes(sequence_id_size, 'big')
     fin_received = False
