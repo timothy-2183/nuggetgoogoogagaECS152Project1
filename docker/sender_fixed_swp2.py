@@ -1,5 +1,6 @@
 import socket
 import time
+import threading
 
 PACKET_SIZE = 1024
 SEQ_ID_SIZE = 4
@@ -16,11 +17,11 @@ class UDPSender:
         self.Socket.bind(("0.0.0.0",SENDER_PORT))
         self.DictOfPackets = {}
         self.SlidingWindow = []
-        self.ListOfAcks = []
+        self.send100_done = False
     
     def send(self, file_to_send, receiver_ip_str, receiver_port):
         #set timeout and address tuple
-        address = (receiver_ip_str, receiver_port)
+        self.address = (receiver_ip_str, receiver_port)
         self.Socket.settimeout(1) #time out when NO packet is received
         #open file
         with open(file_to_send , 'rb') as f:
@@ -34,54 +35,63 @@ class UDPSender:
             self.DictOfPackets[seq_id] = seq_id_bytes + payload
 
         #send first 100 packets thru the network
-        i = 0
-        for seq_id in sorted(self.DictOfPackets):
-            if (i == 100):
-                break
-            packet = self.DictOfPackets[seq_id]
-            self.Socket.sendto(packet, address)
-            self.SlidingWindow.append(seq_id)
-            i += 1
-        print(f"Initial window: {self.SlidingWindow[:10]}...")  # ← ADD THIS (first 10) DEBUG
+        self.send100()
+      
 
-
-        #receiving acks, and manipulating the slide window
-        expected_ack_id = seq_id + MESSAGE_SIZE
+        #manipulating the sliding window
+        expected_ack_id = MESSAGE_SIZE
         while self.DictOfPackets:
-            print(f"Packets remaining: {len(self.DictOfPackets)}, Window: {len(self.SlidingWindow)}, Expected: {expected_ack_id}") # DEBUG
             try:
-                print("Waiting for ACK...")  # ← Add this DEBUG
                 received_ack_packet, _ = self.Socket.recvfrom((SEQ_ID_SIZE + EXTRA_BUFFER_SPACE))
                 received_ack_id = int.from_bytes(received_ack_packet[:SEQ_ID_SIZE],signed=True, byteorder='big')
-                print(f"Parsed ACK: {received_ack_id}")  # ← Add this DEBUG
-                self.ListOfAcks.append(received_ack_id)
-                while(expected_ack_id in self.ListOfAcks):
-                    self.DictOfPackets.pop(expected_ack_id)
-                    self.SlidingWindow.remove(expected_ack_id)
-                    #expected_ack_id = self.SlidingWindow[0]
-                    expected_ack_id += MESSAGE_SIZE
-                    if self.SlidingWindow:
-                        end_seq_id = self.SlidingWindow[-1]
-                        new_end_seq_id = end_seq_id + MESSAGE_SIZE
-                        if new_end_seq_id in self.DictOfPackets:
-                            packet = self.DictOfPackets[new_end_seq_id]
-                            self.Socket.sendto(packet, address)
-                            self.SlidingWindow.append(new_end_seq_id)
-
+                while (received_ack_id >= expected_ack_id):
+                    #pop self.DictOfPackets
+                    packet_seq_id = expected_ack_id - MESSAGE_SIZE
+                    if packet_seq_id in self.DictOfPackets:
+                        self.DictOfPackets.pop(packet_seq_id)
+                        print("Packet", expected_ack_id, "acknowledged") #DEBUG
+                    # send the next packet right outside sliding window
+                    next_seq_id = self.SlidingWindow[-1] + MESSAGE_SIZE
+                    if next_seq_id in self.DictOfPackets:
+                        packet = self.DictOfPackets[next_seq_id]
+                        self.Socket.sendto(packet, self.address)
+                        # slide the sliding window
+                        self.SlidingWindow.remove(packet_seq_id)
+                        self.SlidingWindow.append(next_seq_id)
+                        # increment expected_ack_id
+                        expected_ack_id += MESSAGE_SIZE
             except socket.timeout:
-                #re-send the packets in the SW:
+                print("TIMEOUT! RETRANSMITING")
                 for seq_id in self.SlidingWindow:
                     packet = self.DictOfPackets[seq_id]
-                    self.Socket.sendto(packet, address)
-        
+                    self.Socket.sendto(packet, self.address)
+                    print(f"  Retransmitted packet {seq_id}")
+
+        print("ALL PACKETS SENT") #DEBUG
+
         #finack
         seq_id = -1
         seq_id_bytes = int.to_bytes(seq_id, SEQ_ID_SIZE, signed=True, byteorder='big')
         fin_message = '==FINACK=='
         payload = fin_message.encode()
         packet = seq_id_bytes + payload
-        self.Socket.sendto(packet, address)
+        self.Socket.sendto(packet, self.address)
         self.Socket.close()
+    
+    def send100(self):
+        i = 0
+        for seq_id in sorted(self.DictOfPackets):
+            if (i == 100):
+                break
+            packet = self.DictOfPackets[seq_id]
+            self.Socket.sendto(packet, self.address)
+            self.SlidingWindow.append(seq_id)
+            i += 1
+        self.send100_done = True
+        print(f"Initial window: {self.SlidingWindow[:10]}...")  # ← ADD THIS (first 10) DEBUG
+    
+    
+
 
 
 
@@ -90,4 +100,3 @@ def main():
     udp_sender.send('file.mp3', RECEIVER_IP_ADDRESS, RECEIVER_PORT)
 
 if __name__ == "__main__": main()
-        
