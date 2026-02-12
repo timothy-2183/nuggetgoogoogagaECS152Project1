@@ -1,0 +1,6 @@
+exit
+exit
+exit
+Throughput:  1376.4808800
+Per-packet delay:  0.2638404
+Performance: 3.0660629
