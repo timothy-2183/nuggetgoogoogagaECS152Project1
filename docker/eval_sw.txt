@@ -1,0 +1,39 @@
+1.Throughput:  60.63427376747131
+Per-packet delay:  1770912130.3870213
+Performance:  0.0181903
+
+2.Throughput:  70.54992532730103
+Per-packet delay:  1770912490.1666896
+Performance:  0.0211650
+
+3.Throughput:  75.90597319602966
+Per-packet delay:  1770912632.1379230
+Performance:  0.0227718
+
+4. Throughput:  75.24686312675476
+Per-packet delay:  1770912845.3992636
+Performance:  0.0225741
+
+5. Throughput:  73.15846800804138
+Per-packet delay:  1770913621.4430249
+Performance:  0.0219475
+
+6. Throughput:  60.90282607078552
+Per-packet delay:  1770913772.2744188
+Performance:  0.0182708
+
+7. Throughput:  72.06431603431702
+Per-packet delay:  1770913995.9861135
+Performance:  0.0216193
+
+8. Throughput:  57.00735402107239
+Per-packet delay:  1770914159.4068630
+Performance:  0.0171022
+
+9. Throughput:  68.60139584541321
+Per-packet delay:  1770914287.0857971
+Performance:  0.0205804
+
+10. Throughput:  79.37859678268433
+Per-packet delay:  1770916107.7575967
+Performance:  0.0238136

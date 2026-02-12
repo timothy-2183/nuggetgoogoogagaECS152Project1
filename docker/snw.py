@@ -63,8 +63,8 @@ def main():
     send()
     avgtp = sum(tp)/len(tp)
     avgppd = sum(ppd)/len(ppd)
-    print(f"{avgtp:.7f}")
-    print(f"{avgppd:.7f}")
-    print(f"{0.3*avgtp/1000 + 0.7/avgppd:.7f}")
+    print("Throughput: ", f"{avgtp:.7f}")
+    print("Per-packet delay: ", f"{avgppd:.7f}")
+    print("Performance:", f"{0.3*avgtp/1000 + 0.7/avgppd:.7f}")
 
 if __name__ == "__main__": main()
