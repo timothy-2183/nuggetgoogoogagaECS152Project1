@@ -2,6 +2,26 @@
 Per-packet delay:  0.2638404
 Performance: 3.0660629
 
-Throughput:  1360.7954907
+2. Throughput:  1360.7954907
 Per-packet delay:  0.2608384
 Performance: 3.0918929
+
+3. Throughput:  1351.4465330
+Per-packet delay:  0.2590450
+Performance: 3.1076677
+
+4. Throughput:  1414.4045901
+Per-packet delay:  0.2711138
+Performance: 3.0062632
+
+5. Throughput:  1440.7749681
+Per-packet delay:  0.2761679
+Performance: 2.9669221
+
+6. Throughput:  1372.7285409
+Per-packet delay:  0.2631239
+Performance: 3.0721622
+
+7. Throughput:  1516.4393988
+Per-packet delay:  0.2906742
+Performance: 2.8631266
