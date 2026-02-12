@@ -45,8 +45,7 @@ def send():
     eof_packet = seqnum.to_bytes(sequence_id_size, 'big')
     fin_received = False
     while not fin_received:
-        sock.sendto(eof_packet,(receiverip, receiverport))
-        print("exit")    
+        sock.sendto(eof_packet,(receiverip, receiverport))    
         try:
             packet, _ = sock.recvfrom(packet_sz)
             msg = packet[sequence_id_size:]

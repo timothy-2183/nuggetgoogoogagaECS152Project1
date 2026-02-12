@@ -51,10 +51,7 @@ class UDPSender:
                 seq = base 
                 while seq < ack:
                     if seq in self.packetdict:
-                        t_send = self.packetdict[seq]
-                        t_ack = time.time()
-                        tp = MESSAGE_SIZE / (t_ack-t_send)
-                        self.packettp[seq] = tp
+                        self.packettp[seq] = (time.time()-self.packetdict[seq])
                     seq+=MESSAGE_SIZE
                 #move the sliding window
                 if ack> base:                         
