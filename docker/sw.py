@@ -1,6 +1,5 @@
 import socket
 import time
-import threading
 
 PACKET_SIZE = 1024
 SEQ_ID_SIZE = 4
