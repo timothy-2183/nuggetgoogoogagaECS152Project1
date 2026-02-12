@@ -1,6 +1,7 @@
-exit
-exit
-exit
-Throughput:  1376.4808800
+1. Throughput:  1376.4808800
 Per-packet delay:  0.2638404
 Performance: 3.0660629
+
+Throughput:  1360.7954907
+Per-packet delay:  0.2608384
+Performance: 3.0918929
