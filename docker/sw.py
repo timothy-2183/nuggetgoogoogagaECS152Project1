@@ -53,7 +53,8 @@ class UDPSender:
                     if seq in self.packetdict:
                         t_send = self.packetdict[seq]
                         t_ack = time.time()
-                        packettp = MESSAGE_SIZE / (t_ack-t_send)
+                        tp = MESSAGE_SIZE / (t_ack-t_send)
+                        self.packettp[seq] = tp
                     seq+=MESSAGE_SIZE
                 #move the sliding window
                 if ack> base:                         
@@ -77,7 +78,7 @@ def main():
     udp_sender.send('file.mp3', RECEIVER_IP_ADDRESS, RECEIVER_PORT)
     end = time.time()
     print(end-start)
-    avg = sum(udp_sender.packetdict.values())/len(udp_sender.packetdict)
+    avg = sum(udp_sender.packettp.values())/len(udp_sender.packettp)
     print(f"{avg:.7f}")
     print(f"{0.3*(end-start)/1000 + 0.7/avg:.7f}")
 
