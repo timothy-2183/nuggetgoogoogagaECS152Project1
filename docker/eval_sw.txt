@@ -6,7 +6,6 @@ Metric:  0.724528613
 Per-packet delay:  1.0013217
 Metric:  0.7228301
 
-
 3.Throughput:  64.75208330154419
 Per-packet delay:  1.0783660
 Metric:  0.6685559

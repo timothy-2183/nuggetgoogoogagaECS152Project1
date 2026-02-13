@@ -64,6 +64,6 @@ def main():
     avgppd = sum(ppd)/len(ppd)
     print("Throughput: ", f"{avgtp:.7f}")
     print("Per-packet delay: ", f"{avgppd:.7f}")
-    print("Performance:", f"{0.3*avgtp/1000 + 0.7/avgppd:.7f}")
+    print("Metric:", f"{0.3*avgtp/1000 + 0.7/avgppd:.7f}")
 
 if __name__ == "__main__": main()
