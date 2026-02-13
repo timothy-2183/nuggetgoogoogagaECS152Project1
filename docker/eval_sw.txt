@@ -18,9 +18,9 @@ Metric:  0.6818252
 Per-packet delay:  1.1403983
 Metric:  0.6384154
 
-6. Throughput:  60.90282607078552
-Per-packet delay:  1770913772.2744188
-Metric:  0.0182708
+6. Throughput:  71.18824291229248
+Per-packet delay:  1.1381174
+Metric:  0.6364073
 
 7. Throughput:  77.08440089225769
 Per-packet delay:  1.1003742
@@ -37,3 +37,4 @@ Metric:  0.6975893
 10. Throughput:  78.94189524650574
 Per-packet delay:  1.0520440
 Metric:  0.6890540
+

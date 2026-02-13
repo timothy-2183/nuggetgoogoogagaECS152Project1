@@ -73,9 +73,9 @@ def main():
     start = time.time()
     udp_sender.send('file.mp3', RECEIVER_IP_ADDRESS, RECEIVER_PORT)
     end = time.time()
-    print(end-start)
+    print("Throughput: ",end-start)
     avg = sum(udp_sender.packettp.values())/len(udp_sender.packettp)
-    print(f"{avg:.7f}")
-    print(f"{0.3*(end-start)/1000 + 0.7/avg:.7f}")
+    print("Per-packet delay: ",f"{avg:.7f}")
+    print("Metric: ",f"{0.3*(end-start)/1000 + 0.7/avg:.7f}")
 
 if __name__ == "__main__": main()
